@@ -1,17 +1,34 @@
 package server
 
 import (
-	"crypto/rand"
+	"encoding/gob"
 	"errors"
+	"fmt"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
 	"log-snare/web/data"
+	"log-snare/web/service"
+	"net/url"
+
+	"github.com/natefinch/lumberjack"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type Server struct {
 	Debug bool
+}
+
+type lumberjackSink struct {
+	*lumberjack.Logger
+}
+
+func (lumberjackSink) Sync() error {
+	return nil
 }
 
 func Run(configFile string, debug bool, resetDb bool) error {
@@ -20,7 +37,45 @@ func Run(configFile string, debug bool, resetDb bool) error {
 		return errors.New("must provide a config path")
 	}
 
-	r := gin.Default()
+	ll := lumberjack.Logger{
+		Filename:   "logsnare.log",
+		MaxSize:    20, //MB
+		MaxBackups: 14,
+		MaxAge:     1, //days
+		Compress:   true,
+	}
+	zap.RegisterSink("lumberjack", func(*url.URL) (zap.Sink, error) {
+		return lumberjackSink{
+			Logger: &ll,
+		}, nil
+	})
+
+	cfg := zap.Config{
+		Level:    zap.NewAtomicLevelAt(zapcore.InfoLevel),
+		Encoding: "json",
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey: "message",
+
+			TimeKey:    "time",
+			EncodeTime: zapcore.EpochMillisTimeEncoder,
+
+			CallerKey:    "caller",
+			EncodeCaller: zapcore.ShortCallerEncoder,
+		},
+		OutputPaths:      []string{fmt.Sprintf("lumberjack:%s", "logsnare.log"), "stdout"},
+		ErrorOutputPaths: []string{fmt.Sprintf("lumberjack:%s", "logsnare.log"), "stdout"},
+		InitialFields: map[string]interface{}{
+			"program": "log-snare",
+			"version": 0.1,
+		},
+	}
+	if debug {
+		cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	}
+	logger, err := cfg.Build()
+	if err != nil {
+		log.Fatalf("unable to build logger: %v", err)
+	}
 
 	// data init
 	db, err := gorm.Open(sqlite.Open("logsnare.db"), &gorm.Config{})
@@ -29,12 +84,12 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	}
 
 	if resetDb {
-		if err := db.Migrator().DropTable(&data.User{}, &data.Company{}); err != nil {
+		if err := db.Migrator().DropTable(&data.User{}, &data.Employee{}, &data.Company{}); err != nil {
 			panic("failed to drop tables")
 		}
 	}
 
-	err = db.AutoMigrate(&data.User{}, &data.Company{})
+	err = db.AutoMigrate(&data.User{}, &data.Employee{}, &data.Company{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -42,6 +97,17 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	if err != nil {
 		log.Fatalf("Failed to seed database: %v", err)
 	}
+
+	// Set up services
+	userService := service.NewUserService(db, logger)
+
+	// Set up handlers
+	userHandler := NewUserHandler(userService)
+
+	r := gin.Default()
+	store := cookie.NewStore([]byte("secret"))
+	r.Use(sessions.Sessions("LogSnareSession", store))
+	gob.Register(data.UserSafe{})
 
 	// Load the template files
 	r.LoadHTMLGlob("../ui/templates/*")
@@ -64,16 +130,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 		c.HTML(200, "users.html", nil)
 	})
 
-	// Route to handle POST requests on /login
-	r.POST("/login", func(c *gin.Context) {
-		username := c.PostForm("username")
-		password := c.PostForm("password")
-		// Here, you would typically authenticate the user.
-		// For this example, let's just print the credentials.
-		println("Username:", username, "Password:", password)
-		// Redirect or respond based on authentication (skipped for simplicity)
-		c.JSON(200, gin.H{"status": "submitted"})
-	})
+	r.POST("/login", userHandler.LoginHandler)
 
 	return r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
@@ -83,82 +140,48 @@ func seedDBIfNeeded(db *gorm.DB) error {
 	db.Model(&data.Company{}).Count(&count)
 	if count == 0 {
 
-		// create users for LogSnare
-		var logSnareUsers []data.User
-
-		logSnareGopher := data.User{
-			Username: "gopher",
-			Role:     2,
-		}
-		gopherPass := generatePassword(24)
-		logSnareGopher.Password = gopherPass
-
-		logSnareGopherAdmin := data.User{
-			Username: "gophmin",
-			Role:     1,
-		}
-		gopherAdminPass := generatePassword(24)
-		logSnareGopherAdmin.Password = gopherAdminPass
-
-		logSnareUsers = append(logSnareUsers, logSnareGopher)
-		logSnareUsers = append(logSnareUsers, logSnareGopherAdmin)
-
-		log.Println("[DATA] gopher password: ", gopherPass)
-		log.Println("[DATA] gophmin password: ", gopherAdminPass)
-
-		// create logsnare company
-		company := data.Company{
-			Name:  "LogSnare",
-			Users: logSnareUsers,
+		logSnareUsers := []data.User{
+			data.CreateUserWithPassword("gopher", 2, true),
+			data.CreateUserWithPassword("gophmin", 1, true),
 		}
 
-		if err := db.Create(&company).Error; err != nil {
-			log.Fatal("failed to create logsnare company")
+		var logSnareEmployees []data.Employee
+		for i := 0; i < 20; i++ {
+			employee := data.GenerateEmployee("logsnare.local")
+			logSnareEmployees = append(logSnareEmployees, employee)
 		}
 
-		// create acme company
-		company = data.Company{
-			Name: "Acme",
-			Users: []data.User{
-				{
-					Username: "acme-admin",
-					Role:     1,
-					Password: generatePassword(24),
-				},
-				{
-					Username: "acme-user",
-					Role:     2,
-					Password: generatePassword(24),
-				},
-			},
+		logSnareCompany := data.Company{
+			Name:      "LogSnare",
+			Users:     logSnareUsers,
+			Employees: logSnareEmployees,
+		}
+		if err := db.Create(&logSnareCompany).Error; err != nil {
+			log.Fatal("failed to create logsnare company:", err)
 		}
 
-		if err := db.Create(&company).Error; err != nil {
-			log.Fatal("failed to create acme company")
+		acmeUsers := []data.User{
+			data.CreateUserWithPassword("acme-admin", 1, false),
+			data.CreateUserWithPassword("acme-user", 2, false),
+		}
+
+		var acmeEmployees []data.Employee
+		for i := 0; i < 13; i++ {
+			employee := data.GenerateEmployee("acme.local")
+			acmeEmployees = append(acmeEmployees, employee)
+		}
+
+		acmeCompany := data.Company{
+			Name:      "Acme",
+			Users:     acmeUsers,
+			Employees: acmeEmployees,
+		}
+		if err := db.Create(&acmeCompany).Error; err != nil {
+			log.Fatal("failed to create acme company:", err)
 		}
 
 		log.Println("Database seeded")
 	}
 
 	return nil
-}
-
-func generatePassword(length int) string {
-	const charset = "abcdefghijklmnopqrstuvwxyz" +
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"0123456789" +
-		"!@#$%^&*"
-
-	b := make([]byte, length)
-	_, err := rand.Read(b)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	password := make([]byte, length)
-	for i := 0; i < length; i++ {
-		password[i] = charset[b[i]%byte(len(charset))]
-	}
-
-	return string(password)
 }

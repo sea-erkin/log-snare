@@ -40,10 +40,10 @@
         <div class="card card-md">
             <div class="card-body">
                 <h2 class="h2 text-center mb-4">Login to your account</h2>
-                <form action="./" method="get" autocomplete="off" novalidate>
+                <form action="/login" method="post" autocomplete="off" novalidate>
                     <div class="mb-3">
                         <label class="form-label">Email address</label>
-                        <input type="email" class="form-control" placeholder="your@email.com" autocomplete="off" />
+                        <input type="text" name="username" class="form-control" placeholder="Enter username" autocomplete="off" />
                     </div>
                     <div class="mb-2">
                         <label class="form-label">
@@ -52,12 +52,18 @@
                   </span>
                         </label>
                         <div class="input-group input-group-flat">
-                            <input type="password" class="form-control"  placeholder="Your password"  autocomplete="off" />
+                            <input type="password" name="password" class="form-control"  placeholder="Enter password"  autocomplete="off" />
                         </div>
                     </div>
                     <div class="form-footer">
                         <button type="submit" class="btn btn-primary w-100">Sign in</button>
                     </div>
+                    {{ if .Error }}
+                    <div class="text-center">
+                        <br/>
+                        <span class="badge badge-outline text-red">{{ .Error }}</span>
+                    </div>
+                    {{ end }}
                 </form>
             </div>
         </div>
