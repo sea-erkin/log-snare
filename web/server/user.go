@@ -16,7 +16,7 @@ func NewUserHandler(us *service.UserService) *UserHandler {
 	return &UserHandler{UserService: us}
 }
 
-func (uh *UserHandler) LoginHandler(c *gin.Context) {
+func (uh *UserHandler) Login(c *gin.Context) {
 
 	username := c.PostForm("username")
 	password := c.PostForm("password")

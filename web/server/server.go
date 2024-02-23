@@ -100,10 +100,11 @@ func Run(configFile string, debug bool, resetDb bool) error {
 
 	// Set up services
 	userService := service.NewUserService(db, logger)
+	dashboardService := service.NewDashboardService(db, logger)
 
 	// Set up handlers
 	userHandler := NewUserHandler(userService)
-	_ = userHandler
+	dashboardHandler := NewDashboardHandler(dashboardService)
 
 	r := gin.Default()
 	store := cookie.NewStore([]byte("secret"))
@@ -118,15 +119,21 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	r.Static("assets/js", "../ui/assets/js")
 	r.Static("assets/img", "../ui/assets/img")
 
-	r.GET("/users", func(c *gin.Context) {
-		c.HTML(200, "users.html", nil)
+	r.GET("/dashboard", dashboardHandler.SummaryCounts)
+
+	r.GET("/employees", func(c *gin.Context) {
+		c.HTML(200, "employees.html", gin.H{
+			"CurrentRoute": "/employees",
+		})
 	})
 
-	r.GET("/dashboard", func(c *gin.Context) {
-		c.HTML(200, "dashboard.html", nil)
+	r.GET("/admin", func(c *gin.Context) {
+		c.HTML(200, "admin.html", gin.H{
+			"CurrentRoute": "/admin",
+		})
 	})
 
-	r.POST("/login", userHandler.LoginHandler)
+	r.POST("/login", userHandler.Login)
 
 	return r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
