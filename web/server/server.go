@@ -103,6 +103,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 
 	// Set up handlers
 	userHandler := NewUserHandler(userService)
+	_ = userHandler
 
 	r := gin.Default()
 	store := cookie.NewStore([]byte("secret"))
@@ -117,17 +118,12 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	r.Static("assets/js", "../ui/assets/js")
 	r.Static("assets/img", "../ui/assets/img")
 
-	// Route for the root path to serve the login page
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(200, "login.html", nil)
+	r.GET("/users", func(c *gin.Context) {
+		c.HTML(200, "users.html", nil)
 	})
 
 	r.GET("/dashboard", func(c *gin.Context) {
 		c.HTML(200, "dashboard.html", nil)
-	})
-
-	r.GET("/users", func(c *gin.Context) {
-		c.HTML(200, "users.html", nil)
 	})
 
 	r.POST("/login", userHandler.LoginHandler)
