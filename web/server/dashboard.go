@@ -1,9 +1,12 @@
 package server
 
 import (
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"log-snare/web/data"
 	"log-snare/web/service"
+	"strings"
 )
 
 type DashboardHandler struct {
@@ -17,9 +20,10 @@ func NewDashboardHandler(us *service.DashboardService) *DashboardHandler {
 
 func (h *DashboardHandler) SummaryCounts(c *gin.Context) {
 
-	companyId := 1
+	session := sessions.Default(c)
+	user := session.Get("user").(data.UserSafe)
 
-	summaryCounts, err := h.DashboardService.GetSummaryCounts(companyId)
+	summaryCounts, err := h.DashboardService.GetSummaryCounts(user.CompanyId)
 	if err != nil {
 		h.DashboardService.Logger.Error("unable get summary counts", zap.Error(err))
 		c.Redirect(500, "/")
@@ -32,5 +36,10 @@ func (h *DashboardHandler) SummaryCounts(c *gin.Context) {
 		"AdminCount":      summaryCounts.AdminCount,
 		"UserCount":       summaryCounts.UserCount,
 		"HighSalaryCount": summaryCounts.EmployeeHighSalaryCount,
+
+		// common data can be moved to middleware
+		"CompanyName": user.CompanyName,
+		"UserInitial": string(strings.ToUpper(user.Username)[0]),
+		"UserRole":    user.Role,
 	})
 }

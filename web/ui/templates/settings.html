@@ -1,0 +1,68 @@
+{{ template "header" . }}
+
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <!-- Page pre-title -->
+                <div class="page-pretitle">
+                    Overview
+                </div>
+                <h2 class="page-title">
+                    Company Name: Admin
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="col-12">
+            <div class="row row-cards">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card card-sm">
+                        <div class="card-body">
+                            <div class="d-none d-md-flex mt-3 me-2">
+                                <div>
+                                    <label class="form-check form-switch" data-bs-toggle="tooltip"
+                                           data-bs-placement="bottom">
+                                        <input id="adminCheckbox" class="form-check-input bg-green::active" disabled type="checkbox">
+                                        <span class="form-check-label">Admin</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.getElementById('adminCheckbox').addEventListener('change', function() {
+
+            const data = { checked: this.checked };
+
+            console.log(data)
+
+            fetch('/checkbox-state', {
+                method: 'POST', // or 'PUT'
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        });
+    });
+</script>
+
+{{ template "footer" . }}

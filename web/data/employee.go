@@ -2,6 +2,7 @@ package data
 
 import (
 	"fmt"
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 	"math/rand"
 	"strings"
@@ -10,14 +11,21 @@ import (
 
 // Employee represents an HR employee with various personal and professional details.
 type Employee struct {
-	gorm.Model          // Embedding gorm.Model adds fields ID, CreatedAt, UpdatedAt, DeletedAt
-	CompanyId   int     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	FirstName   string  `gorm:"type:varchar(100);not null"`
-	LastName    string  `gorm:"type:varchar(100);not null"`
-	Email       string  `gorm:"type:varchar(100);unique;not null"`
-	SSN         string  `gorm:"type:varchar(11);unique;not null"` // Assuming US format XXX-XX-XXXX
-	Salary      float64 `gorm:"not null"`
-	DateOfBirth time.Time
+	gorm.Model            // Embedding gorm.Model adds fields ID, CreatedAt, UpdatedAt, DeletedAt
+	CompanyId     int     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	CompanyKSUID  int     `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	EmployeeKSUID string  `gorm:"index;unique"` // KSUID identifier for demo
+	FirstName     string  `gorm:"type:varchar(100);not null"`
+	LastName      string  `gorm:"type:varchar(100);not null"`
+	Email         string  `gorm:"type:varchar(100);not null"`
+	SSN           string  `gorm:"type:varchar(11);unique;not null"` // Assuming US format XXX-XX-XXXX
+	Salary        float64 `gorm:"not null"`
+	DateOfBirth   time.Time
+}
+
+func (m *Employee) BeforeCreate(tx *gorm.DB) (err error) {
+	m.EmployeeKSUID = ksuid.New().String()
+	return
 }
 
 func GenerateEmployee(emailSuffix string) Employee {

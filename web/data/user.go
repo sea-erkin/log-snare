@@ -2,6 +2,7 @@ package data
 
 import (
 	"crypto/rand"
+	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"log"
@@ -9,44 +10,58 @@ import (
 
 type Company struct {
 	gorm.Model
-	Name      string
-	Users     []User     `gorm:"foreignKey:CompanyId"`
-	Employees []Employee `gorm:"foreignKey:CompanyId"`
+	Name       string
+	Identifier string
+	Users      []User     `gorm:"foreignKey:CompanyId"`
+	Employees  []Employee `gorm:"foreignKey:CompanyId"`
+}
+
+func (m *Company) BeforeCreate(tx *gorm.DB) (err error) {
+	m.Identifier = ksuid.New().String()
+	return
 }
 
 type User struct {
 	gorm.Model
-	CompanyId int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	Username  string `gorm:"uniqueIndex"`
-	Password  string
-	Role      int
-	Active    bool `gorm:"default:true"`
+	Identifier string `gorm:"index;unique"` // KSUID identifier for demo
+	CompanyId  int    `gorm:"constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	Username   string `gorm:"uniqueIndex"`
+	Password   string
+	Role       int
+	Active     bool `gorm:"default:true"`
+}
+
+func (m *User) BeforeCreate(tx *gorm.DB) (err error) {
+	m.Identifier = ksuid.New().String()
+	return
 }
 
 // UserSafe does not contain a password
 type UserSafe struct {
-	CompanyId int
-	Username  string
-	Role      int
-	Active    bool
+	CompanyId   int
+	Username    string
+	Role        int
+	Active      bool
+	CompanyName string
 }
 
-func (u *User) UserToUserSafe() UserSafe {
+func (m *User) UserToUserSafe(companyName string) UserSafe {
 	return UserSafe{
-		CompanyId: u.CompanyId,
-		Username:  u.Username,
-		Role:      u.Role,
-		Active:    u.Active,
+		CompanyId:   m.CompanyId,
+		Username:    m.Username,
+		Role:        m.Role,
+		Active:      m.Active,
+		CompanyName: companyName,
 	}
 }
 
 // SetPassword hashes the password and stores it in the User struct
-func (u *User) SetPassword(password string) error {
+func (m *User) SetPassword(password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	u.Password = string(hash)
+	m.Password = string(hash)
 	return nil
 }
 
@@ -55,7 +70,7 @@ func CreateUserWithPassword(username string, role int, logPassword bool) User {
 		Username: username,
 		Role:     role,
 	}
-	password := generatePassword(24)
+	password := generatePassword(12)
 	if logPassword {
 		log.Printf("[DATA] %s password: %s\n", username, password)
 	}
@@ -70,8 +85,7 @@ func CreateUserWithPassword(username string, role int, logPassword bool) User {
 func generatePassword(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz" +
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-		"0123456789" +
-		"!@#$%^&*"
+		"0123456789"
 
 	b := make([]byte, length)
 	_, err := rand.Read(b)

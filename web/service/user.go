@@ -33,13 +33,22 @@ func (us *UserService) CheckUsernameExists(db *gorm.DB, username string) (bool, 
 
 func (us *UserService) GetUserByUsernameAndPassword(username, password string) (retval data.UserSafe, err error) {
 	var user data.User
-	result := us.DB.Where("username = ?", username).First(&user)
 
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	res := us.DB.Where("username = ?", username).First(&user)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return retval, errors.New("username not found")
 		}
-		return retval, result.Error
+		return retval, res.Error
+	}
+
+	var company data.Company
+	res = us.DB.Where("id = ?", user.CompanyId).First(&company)
+	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			return retval, errors.New("company not found")
+		}
+		return retval, res.Error
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
@@ -47,5 +56,5 @@ func (us *UserService) GetUserByUsernameAndPassword(username, password string) (
 		return retval, err
 	}
 
-	return user.UserToUserSafe(), nil
+	return user.UserToUserSafe(company.Name), nil
 }

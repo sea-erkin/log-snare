@@ -28,7 +28,7 @@ func (s *DashboardService) GetSummaryCounts(companyId int) (retval DashboardSumm
 	s.DB.Model(&data.Employee{}).Where("company_id = ? AND salary >= ?", companyId, 100000).Count(&retval.EmployeeHighSalaryCount)
 
 	s.DB.Model(&data.User{}).Where("company_id = ?", companyId).Count(&retval.UserCount)
-	s.DB.Model(&data.User{}).Where("company_id = ? AND role = 1").Count(&retval.AdminCount)
+	s.DB.Model(&data.User{}).Where("company_id = ? AND role = 1", companyId).Count(&retval.AdminCount)
 
 	return retval, nil
 }

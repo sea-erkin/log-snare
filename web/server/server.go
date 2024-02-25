@@ -119,17 +119,25 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	r.Static("assets/js", "../ui/assets/js")
 	r.Static("assets/img", "../ui/assets/img")
 
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(200, "login.html", nil)
+	})
+
 	r.GET("/dashboard", dashboardHandler.SummaryCounts)
 
-	r.GET("/employees", func(c *gin.Context) {
+	r.GET("/employees/:id", func(c *gin.Context) {
+		id := c.Param("id")
+
+		fmt.Println(id)
+
 		c.HTML(200, "employees.html", gin.H{
 			"CurrentRoute": "/employees",
 		})
 	})
 
-	r.GET("/admin", func(c *gin.Context) {
-		c.HTML(200, "admin.html", gin.H{
-			"CurrentRoute": "/admin",
+	r.GET("/settings", func(c *gin.Context) {
+		c.HTML(200, "settings.html", gin.H{
+			"CurrentRoute": "/settings",
 		})
 	})
 
@@ -145,7 +153,7 @@ func seedDBIfNeeded(db *gorm.DB) error {
 
 		logSnareUsers := []data.User{
 			data.CreateUserWithPassword("gopher", 2, true),
-			data.CreateUserWithPassword("gophmin", 1, true),
+			data.CreateUserWithPassword("gophmin", 1, false),
 		}
 
 		var logSnareEmployees []data.Employee
