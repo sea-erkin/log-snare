@@ -21,6 +21,10 @@ type Employee struct {
 	SSN           string  `gorm:"type:varchar(11);unique;not null"` // Assuming US format XXX-XX-XXXX
 	Salary        float64 `gorm:"not null"`
 	DateOfBirth   time.Time
+	Company       Company
+	DisplaySalary string `gorm:"-"`
+	DisplayDOB    string `gorm:"-"`
+	DisplaySSN    string `gorm:"-"`
 }
 
 func (m *Employee) BeforeCreate(tx *gorm.DB) (err error) {

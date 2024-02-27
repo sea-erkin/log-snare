@@ -78,25 +78,21 @@
 
         <div class="col-lg-10 col-md-12 mt-4">
             <div class="card card-lg">
+                {{ if eq .CompletedOne true }}
                 <div class="ribbon ribbon-top ribbon-bookmark bg-green">
                     <!-- Download SVG icon from http://tabler-icons.io/i/star -->
                     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"></path></svg>
                 </div>
+                {{ end }}
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h2 class="h3">I'm so nosy... I want to know what people at other companies make. 🕵️🤑</h2>
-                            <p class="m-0 text-muted">
-                                So, you figured out how to become an admin, huh. That's pretty cool, and funny how simple that was, huh?
-                            </p>
-                            <p class="m-0 text-muted">
-                                What's not so funny, is that as web application testers we see this time and time again where there's a lack of server-side validation for
-                                important client-side interactions.
-                            </p>
+                            <h2 class="h3">I'm so nosy... I want to know what employees at other companies make. 🕵️🤑</h2>
+
                             <br/>
                             <p class="m-0 text-muted">
-                                Moving on... as a regular user you (consider making admin users see more) view employees of your company, but you're nosy
-                                and want to view employees of another company.
+                                As a regular user you can view employees of your company, but you're nosy
+                                and want to view employees of another company. Come back once you've figured that out.
                             </p>
                         </div>
                     </div>
@@ -104,13 +100,15 @@
             </div>
         </div>
 
-
+        {{ if eq .CompletedOne true }}
         <div class="col-lg-10 col-md-12 mt-4">
                 <div class="card card-lg">
+                    {{ if eq .CompletedTwo true }}
                     <div class="ribbon ribbon-top ribbon-bookmark bg-green">
                         <!-- Download SVG icon from http://tabler-icons.io/i/star -->
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"></path></svg>
                     </div>
+                    {{ end }}
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
@@ -128,16 +126,23 @@
                     </div>
                 </div>
         </div>
+        {{ end }}
 
             <div>
                 <br/>
                 <br/>
-
+                <p class="m-0 text-muted">
+                    So, you figured out how to become an admin, huh. That's pretty cool, and funny how simple that was, huh?
+                </p>
+                <p class="m-0 text-muted">
+                    What's not so funny, is that as web application testers we see this time and time again where there's a lack of server-side validation for
+                    important client-side interactions.
+                </p>
 
                 <br/>
                 <br/>
 
-                I see you've figured out how to view employees in another company. WHOOPS!!
+                I see you've figured out how to view users in another company. WHOOPS!!
                 Is there an admin in the other company? It would be cool if you could become an admin of another company.
 
                 <br/>

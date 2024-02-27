@@ -9,7 +9,7 @@
                     Overview
                 </div>
                 <h2 class="page-title">
-                    Company Name: Employees
+                    {{ .EmployeeCompanyName }}: {{ .EmployeeCount}} Employees
                 </h2>
             </div>
         </div>
@@ -35,24 +35,29 @@
                                 </tr>
                                 </thead>
                                 <tbody>
+                                {{ range .Employees }}
                                 <tr>
-                                    <td>Paweł Kuna</td>
+                                    <td>{{ .FirstName }} {{ .LastName }}</td>
                                     <td class="text-muted">
-                                        Email
+                                        {{ .Email }}
                                     </td>
                                     <td class="text-muted">
-                                        SSN
+                                        {{ .DisplaySSN }}
                                     </td>
                                     <td class="text-muted">
-                                        Salary
+                                        {{ .DisplaySalary }}
                                     </td>
                                     <td class="text-muted">
-                                        DOB
+                                        {{ .DisplayDOB }}
                                     </td>
+                                    {{ if eq $.UserRole '1' }}
                                     <td>
                                         <a href="#">Edit</a>
                                     </td>
+                                    {{ end }}
+
                                 </tr>
+                                {{ end }}
                                 </tbody>
                             </table>
                         </div>

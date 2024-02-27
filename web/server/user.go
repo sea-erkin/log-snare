@@ -78,5 +78,5 @@ func (uh *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(302, "/dashboard")
+	c.Redirect(302, "/app/dashboard")
 }

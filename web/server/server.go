@@ -3,32 +3,21 @@ package server
 import (
 	"encoding/gob"
 	"errors"
-	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"
 	"log-snare/web/data"
 	"log-snare/web/service"
-	"net/url"
-
-	"github.com/natefinch/lumberjack"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
+	"net/http"
 )
 
 type Server struct {
 	Debug bool
-}
-
-type lumberjackSink struct {
-	*lumberjack.Logger
-}
-
-func (lumberjackSink) Sync() error {
-	return nil
 }
 
 func Run(configFile string, debug bool, resetDb bool) error {
@@ -36,19 +25,6 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	if len(configFile) == 0 {
 		return errors.New("must provide a config path")
 	}
-
-	ll := lumberjack.Logger{
-		Filename:   "logsnare.log",
-		MaxSize:    20, //MB
-		MaxBackups: 14,
-		MaxAge:     1, //days
-		Compress:   true,
-	}
-	zap.RegisterSink("lumberjack", func(*url.URL) (zap.Sink, error) {
-		return lumberjackSink{
-			Logger: &ll,
-		}, nil
-	})
 
 	cfg := zap.Config{
 		Level:    zap.NewAtomicLevelAt(zapcore.InfoLevel),
@@ -62,8 +38,8 @@ func Run(configFile string, debug bool, resetDb bool) error {
 			CallerKey:    "caller",
 			EncodeCaller: zapcore.ShortCallerEncoder,
 		},
-		OutputPaths:      []string{fmt.Sprintf("lumberjack:%s", "logsnare.log"), "stdout"},
-		ErrorOutputPaths: []string{fmt.Sprintf("lumberjack:%s", "logsnare.log"), "stdout"},
+		OutputPaths:      []string{"logsnare.log", "stdout"},
+		ErrorOutputPaths: []string{"logsnare.log", "stdout"},
 		InitialFields: map[string]interface{}{
 			"program": "log-snare",
 			"version": 0.1,
@@ -71,6 +47,8 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	}
 	if debug {
 		cfg.Level = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
 	}
 	logger, err := cfg.Build()
 	if err != nil {
@@ -84,12 +62,12 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	}
 
 	if resetDb {
-		if err := db.Migrator().DropTable(&data.User{}, &data.Employee{}, &data.Company{}); err != nil {
+		if err := db.Migrator().DropTable(&data.User{}, &data.Employee{}, &data.Company{}, &data.SettingValue{}); err != nil {
 			panic("failed to drop tables")
 		}
 	}
 
-	err = db.AutoMigrate(&data.User{}, &data.Employee{}, &data.Company{})
+	err = db.AutoMigrate(&data.User{}, &data.Employee{}, &data.Company{}, &data.SettingValue{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -101,10 +79,14 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	// Set up services
 	userService := service.NewUserService(db, logger)
 	dashboardService := service.NewDashboardService(db, logger)
+	employeeService := service.NewEmployeeService(db, logger)
+	settingsService := service.NewSettingsService(db, logger)
 
 	// Set up handlers
 	userHandler := NewUserHandler(userService)
 	dashboardHandler := NewDashboardHandler(dashboardService)
+	employeeHandler := NewEmployeeHandler(employeeService, settingsService)
+	settingsHandler := NewSettingsHandler(settingsService)
 
 	r := gin.Default()
 	store := cookie.NewStore([]byte("secret"))
@@ -114,7 +96,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	// Load the template files
 	r.LoadHTMLGlob("../ui/templates/*")
 
-	// Load UI assets
+	// service UI assets for anyone
 	r.Static("assets/css", "../ui/assets/css")
 	r.Static("assets/js", "../ui/assets/js")
 	r.Static("assets/img", "../ui/assets/img")
@@ -123,25 +105,27 @@ func Run(configFile string, debug bool, resetDb bool) error {
 		c.HTML(200, "login.html", nil)
 	})
 
-	r.GET("/dashboard", dashboardHandler.SummaryCounts)
+	r.POST("/login", userHandler.Login)
 
-	r.GET("/employees/:id", func(c *gin.Context) {
-		id := c.Param("id")
+	authRoutes := r.Group("/app")
+	authRoutes.Use(AuthMiddleware())
 
-		fmt.Println(id)
-
-		c.HTML(200, "employees.html", gin.H{
-			"CurrentRoute": "/employees",
-		})
-	})
-
-	r.GET("/settings", func(c *gin.Context) {
+	// application endpoints begin
+	authRoutes.GET("/dashboard", dashboardHandler.Dashboard)
+	authRoutes.GET("/employees/:id", employeeHandler.Employees)
+	authRoutes.GET("/settings", func(c *gin.Context) {
 		c.HTML(200, "settings.html", gin.H{
 			"CurrentRoute": "/settings",
 		})
 	})
 
-	r.POST("/login", userHandler.Login)
+	// educational endpoints that change application behavior.
+	authRoutes.GET("/enable-validation", settingsHandler.EnableValidation)
+	authRoutes.GET("/disable-validation", settingsHandler.DisableValidation)
+
+	r.NoRoute(func(c *gin.Context) {
+		c.Redirect(http.StatusFound, "/")
+	})
 
 	return r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
 }
@@ -191,8 +175,43 @@ func seedDBIfNeeded(db *gorm.DB) error {
 			log.Fatal("failed to create acme company:", err)
 		}
 
+		// add settings
+		db.Create(&data.SettingValue{
+			Key:   "1",
+			Value: false,
+		})
+		db.Create(&data.SettingValue{
+			Key:   "2",
+			Value: false,
+		})
+		db.Create(&data.SettingValue{
+			Key:   "3",
+			Value: false,
+		})
+
 		log.Println("Database seeded")
 	}
 
 	return nil
+}
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		user := session.Get("user")
+		if user == nil {
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
+			return
+		}
+
+		if !user.(data.UserSafe).Active {
+			c.Redirect(http.StatusFound, "/login")
+			c.Abort()
+			return
+		}
+
+		c.Next()
+
+	}
 }

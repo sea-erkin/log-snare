@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -18,7 +19,7 @@ func NewDashboardHandler(us *service.DashboardService) *DashboardHandler {
 	return &DashboardHandler{DashboardService: us}
 }
 
-func (h *DashboardHandler) SummaryCounts(c *gin.Context) {
+func (h *DashboardHandler) Dashboard(c *gin.Context) {
 
 	session := sessions.Default(c)
 	user := session.Get("user").(data.UserSafe)
@@ -30,16 +31,28 @@ func (h *DashboardHandler) SummaryCounts(c *gin.Context) {
 		return
 	}
 
+	challenges, err := h.DashboardService.GetCompletedChallenges()
+	if err != nil {
+		h.DashboardService.Logger.Error("unable get challenge counts", zap.Error(err))
+		c.Redirect(500, "/")
+		return
+	}
+
+	fmt.Println(challenges)
+
 	c.HTML(200, "dashboard.html", gin.H{
 		"CurrentRoute":    "/dashboard",
 		"EmployeeCount":   summaryCounts.EmployeeCount,
 		"AdminCount":      summaryCounts.AdminCount,
 		"UserCount":       summaryCounts.UserCount,
 		"HighSalaryCount": summaryCounts.EmployeeHighSalaryCount,
+		"CompletedOne":    challenges.OneComplete,
+		"CompletedTwo":    challenges.TwoComplete,
 
 		// common data can be moved to middleware
-		"CompanyName": user.CompanyName,
-		"UserInitial": string(strings.ToUpper(user.Username)[0]),
-		"UserRole":    user.Role,
+		"CompanyName":       user.CompanyName,
+		"UserInitial":       string(strings.ToUpper(user.Username)[0]),
+		"UserRole":          user.Role,
+		"ValidationEnabled": data.ValidationEnabled(),
 	})
 }
