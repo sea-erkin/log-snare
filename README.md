@@ -10,7 +10,7 @@ LogSnare is an intentionally vulnerable web application, where your goal is to g
 a basic `gopher` user of the LogSnare company, to the prestigious `acme-admin` of Acme Corporation.
 
 The application contains several vulnerabilities, however, the real lesson to be learned here is how to 
-**prevent and catch these attacks leveraging proper validation and logging**. At the top of the application you'll see a validation toggle
+**prevent and catch these attacks leveraging proper validation and logging**. In the top navbar of the application you'll see a validation toggle
 which allows users to enable and disable server-side validation, seeing how the application would react when it is vulnerable,
 and when access to objects is validated and secured.
 
