@@ -2,7 +2,7 @@
       LogSnare
 </h1>
 
-<h4 align="center">A web application playground for testing IDOR, broken access controls, and logging in Go</h4>
+<h4 align="center">A web application playground for testing IDOR, broken access controls, and logging in Go.</h4>
 
 ## Overview 
 
