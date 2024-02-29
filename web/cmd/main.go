@@ -11,10 +11,10 @@ var (
 	configFileFlag = flag.String("c", "logs-snare-web.yml", "path to config yaml file")
 	debugFileFlag  = flag.Bool("d", false, "debug")
 	resetDbFlag    = flag.Bool("r", false, "reset db")
-	serverPort     = flag.String("p", "8080", "server port to listen on")
+	listenHost     = flag.String("p", "http://0.0.0.0:8080", "listen host")
 )
 
 func main() {
 	flag.Parse()
-	log.Fatal(server.Run(*configFileFlag, *debugFileFlag, *resetDbFlag, *serverPort))
+	log.Fatal(server.Run(*configFileFlag, *debugFileFlag, *resetDbFlag, *listenHost))
 }

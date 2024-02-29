@@ -20,7 +20,7 @@ type Server struct {
 	Debug bool
 }
 
-func Run(configFile string, debug bool, resetDb bool, port string) error {
+func Run(configFile string, debug bool, resetDb bool, listenHost string) error {
 
 	if len(configFile) == 0 {
 		return errors.New("must provide a config path")
@@ -116,11 +116,9 @@ func Run(configFile string, debug bool, resetDb bool, port string) error {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	listenTarget := "localhost:" + port
+	log.Printf("Listening on: http://%s \n", listenHost)
 
-	log.Printf("Listening on: http://%s \n", listenTarget)
-
-	return r.Run(listenTarget)
+	return r.Run(listenHost)
 }
 
 func authMiddleware() gin.HandlerFunc {
