@@ -1,19 +1,25 @@
 package server
 
 import (
+	"encoding/base64"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/segmentio/ksuid"
 	"go.uber.org/zap"
+	"log-snare/web/data"
 	"log-snare/web/service"
+	"strconv"
+	"strings"
 )
 
 type UserHandler struct {
-	UserService *service.UserService
+	UserService    *service.UserService
+	SettingService *service.SettingsService
 }
 
 // NewUserHandler initializes a new user handler with the given user service
-func NewUserHandler(us *service.UserService) *UserHandler {
-	return &UserHandler{UserService: us}
+func NewUserHandler(us *service.UserService, ss *service.SettingsService) *UserHandler {
+	return &UserHandler{UserService: us, SettingService: ss}
 }
 
 func (uh *UserHandler) Login(c *gin.Context) {
@@ -58,6 +64,7 @@ func (uh *UserHandler) Login(c *gin.Context) {
 		c.HTML(200, "login.html", gin.H{
 			"Error": "Login failed, attempt has been logged.",
 		})
+		return
 	}
 
 	// if we got this far, we've logged in
@@ -78,5 +85,184 @@ func (uh *UserHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(302, "/app/dashboard")
+	c.Redirect(302, "/app/docs")
+}
+
+func (h *UserHandler) EnableAdmin(c *gin.Context) {
+
+	session := sessions.Default(c)
+	userSession := session.Get("user").(data.UserSafe)
+
+	if data.ValidationEnabled() {
+		if userSession.Role != service.RoleAdmin {
+			h.UserService.Logger.Warn("user is trying to access a company ID that is not theirs",
+				zap.String("username", userSession.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+	}
+
+	// Update user role to Admin
+	err := h.UserService.DB.Model(&data.User{}).Where("id = ?", userSession.UserId).Update("role", 1).Error
+	if err != nil {
+		h.UserService.Logger.Error("unable to set user admin", zap.Error(err))
+	}
+
+	// Challenge two complete, if the user was not an admin
+	if userSession.Role == 2 {
+		h.SettingService.ChallengeComplete("2")
+	}
+
+	// set in session
+	userSession.Role = 1
+	session.Set("user", userSession)
+	err = session.Save()
+	if err != nil {
+		h.UserService.Logger.Error("failed to save session", zap.Error(err))
+		c.Redirect(500, "/")
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"success": true,
+	})
+}
+
+func (h *UserHandler) DisableAdmin(c *gin.Context) {
+
+	session := sessions.Default(c)
+	userSession := session.Get("user").(data.UserSafe)
+
+	// set in DB
+	err := h.UserService.DB.Model(&data.User{}).Where("id = ?", userSession.UserId).Update("role", 2).Error
+	if err != nil {
+		h.UserService.Logger.Error("unable to set user admin", zap.Error(err))
+	}
+
+	// set in session
+	userSession.Role = 2
+	session.Set("user", userSession)
+	err = session.Save()
+	if err != nil {
+		h.UserService.Logger.Error("failed to save session", zap.Error(err))
+		c.Redirect(500, "/")
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"success": true,
+	})
+}
+
+func (h *UserHandler) Users(c *gin.Context) {
+
+	// expecting input as base64 string
+	decodedBytes, err := base64.StdEncoding.DecodeString(c.Param("id"))
+	if err != nil {
+		h.UserService.Logger.Error("unable to parse id, expecting base64", zap.Error(err))
+		c.HTML(404, "error-404.html", nil)
+		return
+	}
+
+	id := strings.TrimPrefix(string(decodedBytes), "CompanyId:")
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		h.UserService.Logger.Error("unable to parse id", zap.Error(err))
+		c.HTML(404, "error-404.html", nil)
+		return
+	}
+
+	session := sessions.Default(c)
+	user := session.Get("user").(data.UserSafe)
+
+	if data.ValidationEnabled() {
+		if user.Role == service.RoleUser {
+			h.UserService.Logger.Error("user is not an admin", zap.Error(err))
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+
+		if user.CompanyId != intId {
+			h.UserService.Logger.Error("user company id not bla bla", zap.Error(err))
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+	}
+
+	users := h.UserService.UsersByCompanyId(intId)
+	var compName string
+	if len(users) > 0 {
+		compName = users[0].CompanyName
+	}
+
+	c.HTML(200, "users.html", gin.H{
+		"CurrentRoute":        "/users",
+		"Users":               users,
+		"UserCompanyName":     compName,
+		"UserCount":           len(users),
+		"UserCompanyId":       user.CompanyId,
+		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+
+		// common data can be moved to middleware
+		"CompanyName":       user.CompanyName,
+		"UserInitial":       string(strings.ToUpper(user.Username)[0]),
+		"UserRole":          user.Role,
+		"ValidationEnabled": data.ValidationEnabled(),
+	})
+
+}
+
+func (h *UserHandler) Impersonate(c *gin.Context) {
+
+	identifier, err := ksuid.Parse(c.Param("id"))
+	if err != nil {
+		h.UserService.Logger.Error("unable to parse id, expecting ksuid", zap.Error(err))
+		c.HTML(404, "error-404.html", nil)
+		return
+	}
+
+	session := sessions.Default(c)
+	sessionUser := session.Get("user").(data.UserSafe)
+
+	if data.ValidationEnabled() {
+		if sessionUser.Role == service.RoleUser {
+			h.UserService.Logger.Error("user is not an admin", zap.Error(err))
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+
+		//if user.CompanyId != intId {
+		//	h.UserService.Logger.Error("user company id not bla bla", zap.Error(err))
+		//	c.HTML(404, "error-404.html", nil)
+		//	return
+		//}
+	}
+
+	// set user
+	targetUser := h.UserService.UserByIdentifier(identifier.String())
+	session.Set("user", targetUser)
+	err = session.Save()
+	if err != nil {
+		h.UserService.Logger.Error("failed to save session", zap.Error(err))
+		c.Redirect(500, "/")
+		return
+	}
+
+	// logic here obviously for checking
+	if sessionUser.CompanyId != targetUser.CompanyId && targetUser.Role == service.RoleAdmin {
+		h.SettingService.ChallengeComplete("3")
+		c.JSON(200, gin.H{
+			"success": false,
+			"message": "Congrats admin of not your company.",
+		})
+	}
+
+	c.JSON(200, gin.H{
+		"success": true,
+	})
 }

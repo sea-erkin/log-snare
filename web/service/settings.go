@@ -17,7 +17,7 @@ func NewSettingsService(db *gorm.DB, logger *zap.Logger) *SettingsService {
 
 func (s *SettingsService) ChallengeComplete(challenge string) {
 	setting := data.SettingValue{}
-	s.DB.Model(&data.SettingValue{}).Where("key = ?", "1").First(&setting)
+	s.DB.Model(&data.SettingValue{}).Where("key = ?", challenge).First(&setting)
 	setting.Value = true
 	s.DB.Save(setting)
 }

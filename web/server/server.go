@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/base64"
 	"encoding/gob"
 	"errors"
 	"github.com/gin-contrib/sessions"
@@ -14,6 +15,7 @@ import (
 	"log-snare/web/data"
 	"log-snare/web/service"
 	"net/http"
+	"strconv"
 )
 
 type Server struct {
@@ -33,7 +35,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 			MessageKey: "message",
 
 			TimeKey:    "time",
-			EncodeTime: zapcore.EpochMillisTimeEncoder,
+			EncodeTime: zapcore.ISO8601TimeEncoder,
 
 			CallerKey:    "caller",
 			EncodeCaller: zapcore.ShortCallerEncoder,
@@ -83,10 +85,10 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	settingsService := service.NewSettingsService(db, logger)
 
 	// Set up handlers
-	userHandler := NewUserHandler(userService)
+	userHandler := NewUserHandler(userService, settingsService)
 	dashboardHandler := NewDashboardHandler(dashboardService)
-	employeeHandler := NewEmployeeHandler(employeeService, settingsService)
-	settingsHandler := NewSettingsHandler(settingsService)
+	employeeHandler := NewEmployeeHandler(employeeService, settingsService, userService)
+	settingsHandler := NewSettingsHandler(settingsService, userService)
 
 	r := gin.Default()
 	store := cookie.NewStore([]byte("secret"))
@@ -111,13 +113,17 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	authRoutes.Use(AuthMiddleware())
 
 	// application endpoints begin
+	// views
 	authRoutes.GET("/dashboard", dashboardHandler.Dashboard)
 	authRoutes.GET("/employees/:id", employeeHandler.Employees)
-	authRoutes.GET("/settings", func(c *gin.Context) {
-		c.HTML(200, "settings.html", gin.H{
-			"CurrentRoute": "/settings",
-		})
-	})
+	authRoutes.GET("/settings", settingsHandler.Settings)
+	authRoutes.GET("/users/:id", userHandler.Users)
+	authRoutes.GET("/impersonate/:id", userHandler.Impersonate)
+	authRoutes.GET("/docs", settingsHandler.Docs)
+
+	// api
+	authRoutes.GET("/enable-admin", userHandler.EnableAdmin)
+	authRoutes.GET("/disable-admin", userHandler.DisableAdmin)
 
 	// educational endpoints that change application behavior.
 	authRoutes.GET("/enable-validation", settingsHandler.EnableValidation)
@@ -214,4 +220,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Next()
 
 	}
+}
+
+func ManageUserCompanyIdentifier(companyId int) string {
+	target := "CompanyId:" + strconv.Itoa(companyId)
+	return base64.StdEncoding.EncodeToString([]byte(target))
 }

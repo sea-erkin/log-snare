@@ -9,7 +9,7 @@
                     Overview
                 </div>
                 <h2 class="page-title">
-                    Company Name: Admin
+                    Settings
                 </h2>
             </div>
         </div>
@@ -19,18 +19,36 @@
     <div class="container-xl">
         <div class="col-12">
             <div class="row row-cards">
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg-6">
                     <div class="card card-sm">
                         <div class="card-body">
-                            <div class="d-none d-md-flex mt-3 me-2">
-                                <div>
-                                    <label class="form-check form-switch" data-bs-toggle="tooltip"
-                                           data-bs-placement="bottom">
-                                        <input id="adminCheckbox" class="form-check-input bg-green::active" disabled type="checkbox">
-                                        <span class="form-check-label">Admin</span>
-                                    </label>
+                            <div class="row g-2">
+                                <div class="mt-3 me-2 col-lg-6">
+                                    <div>
+                                        <label class="form-check form-switch" data-bs-toggle="tooltip"
+                                               data-bs-placement="bottom">
+                                            <input id="adminCheckbox" class="form-check-input bg-green::active" {{ if eq .UserRole 2 }}disabled{{else}}checked{{ end }} type="checkbox">
+                                            <span class="form-check-label">Admin</span>
+                                        </label>
+                                    </div>
                                 </div>
+                                {{ if eq .UserRole 1 }}
+                                <div class="mb-3 col-lg-6">
+                                    <label class="form-label">Impersonate User</label>
+                                    <div class="row g-2">
+                                        <div class="col-5">
+                                            <select id="impersonateUserSelect" class="form-select">
+                                                {{ range .Users }}
+                                                <option value="{{.Identifier}}">{{.Username}}</option>
+                                                {{ end }}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{ end }}
                             </div>
+
+
                         </div>
                     </div>
                 </div>
@@ -45,21 +63,33 @@
 
             const data = { checked: this.checked };
 
-            fetch('/checkbox-state', {
-                method: 'POST', // or 'PUT'
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
+            let url = '/app/disable-admin'
+
+            if (data.checked) {
+                url = '/app/enable-admin'
+            }
+
+            fetch(url, {
+                method: 'GET',
             })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Success:', data);
                 })
                 .catch((error) => {
-                    console.error('Error:', error);
                 });
         });
+
+        document.getElementById("impersonateUserSelect").addEventListener('change', function() {
+            fetch(`/app/impersonate/${this.value}`, {
+                method: 'GET',
+            })
+            .then(response => response.json())
+            .then(data => {
+            })
+            .catch((error) => {
+            });
+        });
+
     });
 </script>
 

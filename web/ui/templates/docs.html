@@ -1,0 +1,92 @@
+{{ template "header" . }}
+
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <!-- Page pre-title -->
+                <div class="page-pretitle">
+                    Overview
+                </div>
+                <h2 class="page-title">
+                    Docs
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+
+        <div class="col-12">
+
+            <div class="row row-cards">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card card-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                            <span class="bg-primary text-white avatar"><!-- Download SVG icon from http://tabler-icons.io/i/currency-dollar -->
+                              <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M16.7 8a3 3 0 0 0 -2.7 -2h-4a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6h-4a3 3 0 0 1 -2.7 -2"></path><path d="M12 3v3m0 12v3"></path></svg>
+                            </span>
+                                </div>
+                                <div class="col">
+                                    <div class="font-weight-medium">
+                                        {{ .EmployeeCount }} Employees
+                                    </div>
+                                    <div class="text-muted">
+                                        {{ .HighSalaryCount }} High salary
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card card-sm">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-auto">
+                            <span class="bg-green text-white avatar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-users-group" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ffffff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                  <path d="M10 13a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                  <path d="M8 21v-1a2 2 0 0 1 2 -2h4a2 2 0 0 1 2 2v1" />
+                                  <path d="M15 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                  <path d="M17 10h2a2 2 0 0 1 2 2v1" />
+                                  <path d="M5 5a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+                                  <path d="M3 13v-1a2 2 0 0 1 2 -2h2" />
+                                </svg>
+                            </span>
+                                </div>
+                                <div class="col">
+                                    <div class="font-weight-medium">
+                                        2 Users
+                                    </div>
+                                    <div class="text-muted">
+                                        1 Admin
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="col-lg-10 col-md-12 mt-4">
+            <div class="card">
+                <div class="img-responsive img-responsive-21x9 card-img-top" style="background-image: url(/assets/img/challenge.jpg)"></div>
+                <div class="card-body">
+                    <p class="text-secondary">LogSnare is an intentionally vulnerable application which shows how IDOR vulnerabilties can be abused and exploited. Your goal is to go from being a basic user of the boring cyber-security company "LogSnare" to an exciting administrator of the prestigious "Acme Corporation".</p>
+                    <p class="text-secondary">Start by clicking on the Dashboard, where hints and instructions will be provided.</p>
+                    <p class="text-secondary">Once you're all done, be sure to enable validation and see how all of your malicious actions would've been logged along the way. This is where the real lesson is learned. You can see how web applications should validate, and log IDOR validation requests.</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{{ template "footer" . }}

@@ -5,11 +5,9 @@ import (
 	"sync"
 )
 
-// Globals saved in memory
 var (
 	mu sync.Mutex
 
-	_EnableLogging    bool
 	_EnableValidation bool
 )
 
@@ -19,22 +17,10 @@ type SettingValue struct {
 	Value bool
 }
 
-func SetLogging(value bool) {
-	mu.Lock()
-	defer mu.Unlock()
-	_EnableLogging = value
-}
-
 func SetValidation(value bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	_EnableValidation = value
-}
-
-func LoggingEnabled() bool {
-	mu.Lock()
-	defer mu.Unlock()
-	return _EnableLogging
 }
 
 func ValidationEnabled() bool {

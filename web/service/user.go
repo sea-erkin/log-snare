@@ -34,19 +34,10 @@ func (us *UserService) CheckUsernameExists(db *gorm.DB, username string) (bool, 
 func (us *UserService) GetUserByUsernameAndPassword(username, password string) (retval data.UserSafe, err error) {
 	var user data.User
 
-	res := us.DB.Where("username = ?", username).First(&user)
+	res := us.DB.Preload("Company").Where("username = ?", username).First(&user)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			return retval, errors.New("username not found")
-		}
-		return retval, res.Error
-	}
-
-	var company data.Company
-	res = us.DB.Where("id = ?", user.CompanyId).First(&company)
-	if res.Error != nil {
-		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return retval, errors.New("company not found")
 		}
 		return retval, res.Error
 	}
@@ -56,5 +47,22 @@ func (us *UserService) GetUserByUsernameAndPassword(username, password string) (
 		return retval, err
 	}
 
-	return user.UserToUserSafe(company.Name), nil
+	return user.ToUserSafe(), nil
+}
+
+func (us *UserService) UsersByCompanyId(companyId int) (retval []data.UserSafe) {
+	var users []data.User
+	us.DB.Preload("Company").Where("company_id = ?", companyId).Find(&users)
+
+	for _, user := range users {
+		retval = append(retval, user.ToUserSafe())
+	}
+
+	return retval
+}
+
+func (us *UserService) UserByIdentifier(identifier string) (retval data.UserSafe) {
+	var user data.User
+	us.DB.Preload("Company").Where("identifier = ?", identifier).First(&user)
+	return user.ToUserSafe()
 }

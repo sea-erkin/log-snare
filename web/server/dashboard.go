@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -38,16 +37,17 @@ func (h *DashboardHandler) Dashboard(c *gin.Context) {
 		return
 	}
 
-	fmt.Println(challenges)
-
 	c.HTML(200, "dashboard.html", gin.H{
-		"CurrentRoute":    "/dashboard",
-		"EmployeeCount":   summaryCounts.EmployeeCount,
-		"AdminCount":      summaryCounts.AdminCount,
-		"UserCount":       summaryCounts.UserCount,
-		"HighSalaryCount": summaryCounts.EmployeeHighSalaryCount,
-		"CompletedOne":    challenges.OneComplete,
-		"CompletedTwo":    challenges.TwoComplete,
+		"CurrentRoute":        "/dashboard",
+		"EmployeeCount":       summaryCounts.EmployeeCount,
+		"AdminCount":          summaryCounts.AdminCount,
+		"UserCount":           summaryCounts.UserCount,
+		"HighSalaryCount":     summaryCounts.EmployeeHighSalaryCount,
+		"CompletedOne":        challenges.OneComplete,
+		"CompletedTwo":        challenges.TwoComplete,
+		"CompletedThree":      challenges.ThreeComplete,
+		"UserCompanyId":       user.CompanyId,
+		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,

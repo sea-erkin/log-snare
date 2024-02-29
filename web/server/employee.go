@@ -13,29 +13,46 @@ import (
 type EmployeeHandler struct {
 	EmployeeService *service.EmployeeService
 	SettingsService *service.SettingsService
+	UserService     *service.UserService
 }
 
 // NewEmployeeHandler initializes a new user handler with the given user service
-func NewEmployeeHandler(us *service.EmployeeService, ss *service.SettingsService) *EmployeeHandler {
-	return &EmployeeHandler{EmployeeService: us, SettingsService: ss}
+func NewEmployeeHandler(us *service.EmployeeService, ss *service.SettingsService, uss *service.UserService) *EmployeeHandler {
+	return &EmployeeHandler{
+		EmployeeService: us,
+		SettingsService: ss,
+		UserService:     uss,
+	}
 }
 
 func (h *EmployeeHandler) Employees(c *gin.Context) {
 
+	session := sessions.Default(c)
+	user := session.Get("user").(data.UserSafe)
+
 	id := c.Param("id")
 	intId, err := strconv.Atoi(id)
 	if err != nil {
-		h.EmployeeService.Logger.Error("unable to parse id", zap.Error(err))
+		h.EmployeeService.Logger.Warn("unable to parse provided ID as an integer",
+			zap.String("username", user.Username),
+			zap.String("eventType", "security"),
+			zap.String("securityType", "tamper-possible"),
+			zap.String("eventCategory", "validation"),
+			zap.String("clientIp", c.ClientIP()),
+		)
 		c.HTML(404, "error-404.html", nil)
 		return
 	}
 
-	session := sessions.Default(c)
-	user := session.Get("user").(data.UserSafe)
-
 	if data.ValidationEnabled() {
 		if user.CompanyId != intId {
-			h.EmployeeService.Logger.Error("user company id not bla bla", zap.Error(err))
+			h.EmployeeService.Logger.Warn("user is trying to access a company ID that is not theirs",
+				zap.String("username", user.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
 			c.HTML(404, "error-404.html", nil)
 			return
 		}
@@ -57,6 +74,8 @@ func (h *EmployeeHandler) Employees(c *gin.Context) {
 		"Employees":           employees,
 		"EmployeeCompanyName": employeeCompanyName,
 		"EmployeeCount":       len(employees),
+		"UserCompanyId":       user.CompanyId,
+		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,

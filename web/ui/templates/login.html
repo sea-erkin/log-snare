@@ -19,6 +19,7 @@
     <link href="./assets/css/tabler-payments.min.css?1684106062" rel="stylesheet"/>
     <link href="./assets/css/tabler-vendors.min.css?1684106062" rel="stylesheet"/>
     <link href="./assets/css/demo.min.css?1684106062" rel="stylesheet"/>
+    <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
     <style>
         @import url('https://rsms.me/inter/inter.css');
         :root {
@@ -33,13 +34,14 @@
 <script src="./assets/js/demo-theme.min.js?1684106062"></script>
 <div class="page page-center">
     <div class="container container-tight py-4">
-        <div class="text-center mb-4">
-<!--            todo: add custom logo-->
-            <a href="." class="navbar-brand navbar-brand-autodark"><img src="./static/logo.svg" height="36" alt=""></a>
+        <div class="text-center" style="max-height: 20rem">
+           <img src="./assets/img/logsnare-gopher.png" he alt="LogSnare" />
         </div>
         <div class="card card-md">
             <div class="card-body">
-                <h2 class="h2 text-center mb-4">Login to your account</h2>
+                <div class="text-center mb-4">
+                    <img class="navbar-brand navbar-brand-autodark" src="./assets/img/logsnare-long.png" height="80" alt="logo"/>
+                </div>
                 <form action="/login" method="post" autocomplete="off" novalidate>
                     <div class="mb-3">
                         <label class="form-label">Username</label>

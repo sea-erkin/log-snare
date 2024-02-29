@@ -72,12 +72,11 @@
                     </div>
                 </div>
             </div>
-
-
         </div>
 
         <div class="col-lg-10 col-md-12 mt-4">
             <div class="card card-lg">
+                {{ if eq .CompletedOne true }}<div class="card-status-bottom bg-success"></div>{{ end }}
                 {{ if eq .CompletedOne true }}
                 <div class="ribbon ribbon-top ribbon-bookmark bg-green">
                     <!-- Download SVG icon from http://tabler-icons.io/i/star -->
@@ -87,9 +86,7 @@
                 <div class="card-body">
                     <div class="row align-items-center">
                         <div class="col">
-                            <h2 class="h3">I'm so nosy... I want to know what employees at other companies make. 🕵️🤑</h2>
-
-                            <br/>
+                            <h2 class="h3">Challenge 1: Nosy User 🕵️🤑</h2>
                             <p class="m-0 text-muted">
                                 As a regular user you can view employees of your company, but you're nosy
                                 and want to view employees of another company. Come back once you've figured that out.
@@ -103,6 +100,7 @@
         {{ if eq .CompletedOne true }}
         <div class="col-lg-10 col-md-12 mt-4">
                 <div class="card card-lg">
+                    {{ if eq .CompletedTwo true }}<div class="card-status-bottom bg-success"></div>{{ end }}
                     {{ if eq .CompletedTwo true }}
                     <div class="ribbon ribbon-top ribbon-bookmark bg-green">
                         <!-- Download SVG icon from http://tabler-icons.io/i/star -->
@@ -112,7 +110,7 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col">
-                                <h2 class="h3">Basic user, nah. Admin is more my speed 😎 🚀</h2>
+                                <h2 class="h3">Challenge 2: Power Trip 😎 🚀</h2>
                                 <p class="m-0 text-muted">
                                     You are so basic.
                                     Just kidding, you're just a user with a basic role... but we can fix that.
@@ -128,32 +126,55 @@
         </div>
         {{ end }}
 
-            <div>
-                <br/>
-                <br/>
-                <p class="m-0 text-muted">
-                    So, you figured out how to become an admin, huh. That's pretty cool, and funny how simple that was, huh?
-                </p>
-                <p class="m-0 text-muted">
-                    What's not so funny, is that as web application testers we see this time and time again where there's a lack of server-side validation for
-                    important client-side interactions.
-                </p>
 
-                <br/>
-                <br/>
+        {{ if eq .CompletedTwo true }}
+        <div class="col-lg-10 col-md-12 mt-4">
+            <div class="card card-lg">
+                {{ if eq .CompletedThree true }}<div class="card-status-bottom bg-success"></div>{{ end }}
+                {{ if eq .CompletedThree true }}
+                <div class="ribbon ribbon-top ribbon-bookmark bg-green">
+                    <!-- Download SVG icon from http://tabler-icons.io/i/star -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z"></path></svg>
+                </div>
+                {{ end }}
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="h3">Challenge 3: Administer Another Org 🔥 🥵</h2>
+                            <p class="m-0 text-muted">
+                                So, you figured out how to become an admin, huh. That's pretty cool, and funny how simple that was?
+                            </p>
+                            <br/>
+                            <p class="m-0 text-muted">
+                                You may have noticed you can view users now as an admin, and you can actually impersonate users of your company!
+                                You think there's a chance you could impersonate users from another company?
+                            </p>
 
-                I see you've figured out how to view users in another company. WHOOPS!!
-                Is there an admin in the other company? It would be cool if you could become an admin of another company.
-
-                <br/>
-                <br/>
-
-                Nice, you've managed to become an admin of another company. Now go ahead and enable logging and validation
-                and see how you would've been caught red-handed in an application with proper logging and validation.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{ end }}
+        {{ if eq .CompletedThree true }}
+        <div class="col-lg-10 col-md-12 mt-4">
+            <div class="card card-lg">
+                <div class="card-status-bottom bg-green"></div>
+                    <div class="card-stamp">
+                        <div class="card-stamp-icon bg-green">
+                            <!-- Download SVG icon from http://tabler-icons.io/i/bell -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-star" width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 17.75l-6.172 3.245l1.179 -6.873l-5 -4.867l6.9 -1l3.086 -6.253l3.086 6.253l6.9 1l-5 4.867l1.179 6.873z" /></svg>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">Congratulations</h3>
+                        <p class="text-muted">You've completed all the challenges. Here comes the fun part though. Every malicious action you've taken to Go from a Basic Gopher, to the admin of the prestigiuos Acme corporation, could have been prevented, and better yet, logged.</p>
+                        <p class="text-muted">Enable validation using the toggle at the top, and trace back through your steps while viewing the logs. This is how applications SHOULD handle IDOR vulnerabilities.</p>
+                    </div>
 
             </div>
-
         </div>
+        {{ end }}
     </div>
 </div>
 {{ template "footer" . }}

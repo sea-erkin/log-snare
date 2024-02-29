@@ -29,6 +29,7 @@ type User struct {
 	Password   string
 	Role       int
 	Active     bool `gorm:"default:true"`
+	Company    Company
 }
 
 func (m *User) BeforeCreate(tx *gorm.DB) (err error) {
@@ -43,15 +44,21 @@ type UserSafe struct {
 	Role        int
 	Active      bool
 	CompanyName string
+	UserId      uint
+	Identifier  string
+	Created     string
 }
 
-func (m *User) UserToUserSafe(companyName string) UserSafe {
+func (m *User) ToUserSafe() UserSafe {
 	return UserSafe{
 		CompanyId:   m.CompanyId,
 		Username:    m.Username,
 		Role:        m.Role,
 		Active:      m.Active,
-		CompanyName: companyName,
+		UserId:      m.ID,
+		CompanyName: m.Company.Name,
+		Identifier:  m.Identifier,
+		Created:     m.CreatedAt.Format("01/02/2006"),
 	}
 }
 

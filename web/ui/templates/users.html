@@ -1,0 +1,64 @@
+{{ template "header" . }}
+
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <!-- Page pre-title -->
+                <div class="page-pretitle">
+                    Overview
+                </div>
+                <h2 class="page-title">
+                    {{ .UserCompanyName }}: {{ .UserCount}} Users
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="page-body">
+    <div class="container-xl">
+        <div class="col-12">
+            <div class="row row-cards">
+
+                <div class="col-lg-8 col-md-12">
+                    <div class="card">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Created</th>
+                                    <th>Role</th>
+                                    <th>Active</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {{ range .Users }}
+                                <tr>
+                                    {{ if eq $.UserRole 1 }}
+                                    <td hidden userId="{{.Identifier}}">
+                                    </td>
+                                    {{ end }}
+                                    <td>{{ .Username }}</td>
+                                    <td class="text-muted">
+                                        {{ .Created }}
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ if eq .Role 1 }}Admin{{else}}User{{end}}
+                                    </td>
+                                    <td class="text-muted">
+                                        {{ if eq .Active true }}Yes{{else}}No{{end}}
+                                    </td>
+                                </tr>
+                                {{ end }}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{{ template "footer" . }}

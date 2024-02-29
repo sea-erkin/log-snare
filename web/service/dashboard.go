@@ -54,5 +54,29 @@ func (s *DashboardService) GetCompletedChallenges() (retval CompletedChallenges,
 		retval.OneComplete = true
 	}
 
+	settingValue.ID = 2
+	err = s.DB.Model(&data.SettingValue{}).Where("key = ? AND value = ?", 2, 1).First(&settingValue).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return retval, fmt.Errorf("unable to retrieve challenge info: %w", err.Error())
+		} else {
+			retval.TwoComplete = false
+		}
+	} else {
+		retval.TwoComplete = true
+	}
+
+	settingValue.ID = 3
+	err = s.DB.Model(&data.SettingValue{}).Where("key = ? AND value = ?", 3, 1).First(&settingValue).Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return retval, fmt.Errorf("unable to retrieve challenge info: %w", err.Error())
+		} else {
+			retval.ThreeComplete = false
+		}
+	} else {
+		retval.ThreeComplete = true
+	}
+
 	return retval, nil
 }
