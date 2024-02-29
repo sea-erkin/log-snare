@@ -4,8 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN go mod download
-
 RUN go mod tidy
 
 RUN cd /app/web/cmd && GOOS=linux go build -o log-snare

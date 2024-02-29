@@ -9,10 +9,11 @@
 LogSnare is an intentionally vulnerable web application, where your goal is to go from
 a basic `gopher` user of the LogSnare company, to the prestigious `acme-admin` of Acme Corporation.
 
-The application contains several vulnerabilities, however, the real lesson to be learned here is how to 
-**prevent and catch these attacks leveraging proper validation and logging**. At the top of the application you'll see a validation toggle
-which allows users to enable and disable server-side validation, seeing how the application would react when it is vulnerable,
-and when access to objects is validated and secured.
+The application, while hosting multiple vulnerabilities, serves as a valuable educational tool. However, the real lesson to be learned here is how to 
+**prevent and catch these attacks leveraging proper validation and logging**. 
+
+After logging in to the demo application, in the top navbar you'll see a validation toggle
+which allows you to toggle security controls in real-time.
 
 <img src="https://raw.githubusercontent.com/sea-erkin/log-snare/main/web/ui/assets/img/challenge.jpg">
 
@@ -26,11 +27,11 @@ docker run -p 127.0.0.1:8080:8080 seaerkin/log-snare
 You'll receive a username and password to login, have at it from there!
 
 ## Catching Attackers with Logging
-Insecure Direct Object References (IDORs) fall under the OWASP Top 10 category of "Broken Access Control". 
+Insecure Direct Object References (IDORs) fall under the OWASP Top category of "Broken Access Controls". 
 These vulnerabilities are some of the most severe as they can allow end-users access to resources they shouldn't be able to access. 
 
-What most people don't realize, is IDOR vulnerabilities are some of the best opportunities for logging because in most cases, a user will never
-"accidentally" trigger an IDOR. IDOR vulnerabilities are typically achieved when a user asks for resources outside of their allowed interface.
+Most people don't realize, IDOR vulnerabilities are some of the best opportunities for logging. This is because in most cases, a user will never
+"accidentally" trigger an IDOR. IDOR vulnerabilities are typically achieved when a user asks for resources outside their allowed interface.
 
 Attackers abuse web applications by asking web servers to return resources the user may not have access too, and this application hopes
 to serve as an educational resources on how to fix, prevent, and log these types of security events.
