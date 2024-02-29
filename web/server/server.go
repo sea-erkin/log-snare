@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 	"log"
 	"log-snare/web/data"
 	"log-snare/web/service"
@@ -22,7 +20,7 @@ type Server struct {
 	Debug bool
 }
 
-func Run(configFile string, debug bool, resetDb bool) error {
+func Run(configFile string, debug bool, resetDb bool, port string) error {
 
 	if len(configFile) == 0 {
 		return errors.New("must provide a config path")
@@ -57,25 +55,9 @@ func Run(configFile string, debug bool, resetDb bool) error {
 		log.Fatalf("unable to build logger: %v", err)
 	}
 
-	// data init
-	db, err := gorm.Open(sqlite.Open("logsnare.db"), &gorm.Config{})
+	db, err := data.SetupDB(resetDb)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-
-	if resetDb {
-		if err := db.Migrator().DropTable(&data.User{}, &data.Employee{}, &data.Company{}, &data.SettingValue{}); err != nil {
-			panic("failed to drop tables")
-		}
-	}
-
-	err = db.AutoMigrate(&data.User{}, &data.Employee{}, &data.Company{}, &data.SettingValue{})
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	err = seedDBIfNeeded(db)
-	if err != nil {
-		log.Fatalf("Failed to seed database: %v", err)
+		logger.Fatal("unable to setup db", zap.Error(err))
 	}
 
 	// Set up services
@@ -91,6 +73,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	settingsHandler := NewSettingsHandler(settingsService, userService)
 
 	r := gin.Default()
+	// note-unsafe: in prod you'd ideally want to generate a crypto random secure secret for your cookie store.
 	store := cookie.NewStore([]byte("secret"))
 	r.Use(sessions.Sessions("LogSnareSession", store))
 	gob.Register(data.UserSafe{})
@@ -110,7 +93,7 @@ func Run(configFile string, debug bool, resetDb bool) error {
 	r.POST("/login", userHandler.Login)
 
 	authRoutes := r.Group("/app")
-	authRoutes.Use(AuthMiddleware())
+	authRoutes.Use(authMiddleware())
 
 	// application endpoints begin
 	// views
@@ -133,75 +116,14 @@ func Run(configFile string, debug bool, resetDb bool) error {
 		c.Redirect(http.StatusFound, "/")
 	})
 
-	return r.Run() // listen and serve on 0.0.0.0:8080 (for windows "localhost:8080")
+	listenTarget := "localhost:" + port
+
+	log.Printf("Listening on: http://%s \n", listenTarget)
+
+	return r.Run(listenTarget)
 }
 
-func seedDBIfNeeded(db *gorm.DB) error {
-	var count int64
-	db.Model(&data.Company{}).Count(&count)
-	if count == 0 {
-
-		logSnareUsers := []data.User{
-			data.CreateUserWithPassword("gopher", 2, true),
-			data.CreateUserWithPassword("gophmin", 1, false),
-		}
-
-		var logSnareEmployees []data.Employee
-		for i := 0; i < 20; i++ {
-			employee := data.GenerateEmployee("logsnare.local")
-			logSnareEmployees = append(logSnareEmployees, employee)
-		}
-
-		logSnareCompany := data.Company{
-			Name:      "LogSnare",
-			Users:     logSnareUsers,
-			Employees: logSnareEmployees,
-		}
-		if err := db.Create(&logSnareCompany).Error; err != nil {
-			log.Fatal("failed to create logsnare company:", err)
-		}
-
-		acmeUsers := []data.User{
-			data.CreateUserWithPassword("acme-admin", 1, false),
-			data.CreateUserWithPassword("acme-user", 2, false),
-		}
-
-		var acmeEmployees []data.Employee
-		for i := 0; i < 13; i++ {
-			employee := data.GenerateEmployee("acme.local")
-			acmeEmployees = append(acmeEmployees, employee)
-		}
-
-		acmeCompany := data.Company{
-			Name:      "Acme",
-			Users:     acmeUsers,
-			Employees: acmeEmployees,
-		}
-		if err := db.Create(&acmeCompany).Error; err != nil {
-			log.Fatal("failed to create acme company:", err)
-		}
-
-		// add settings
-		db.Create(&data.SettingValue{
-			Key:   "1",
-			Value: false,
-		})
-		db.Create(&data.SettingValue{
-			Key:   "2",
-			Value: false,
-		})
-		db.Create(&data.SettingValue{
-			Key:   "3",
-			Value: false,
-		})
-
-		log.Println("Database seeded")
-	}
-
-	return nil
-}
-
-func AuthMiddleware() gin.HandlerFunc {
+func authMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		user := session.Get("user")
@@ -222,7 +144,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func ManageUserCompanyIdentifier(companyId int) string {
+func manageUserCompanyIdentifier(companyId int) string {
 	target := "CompanyId:" + strconv.Itoa(companyId)
 	return base64.StdEncoding.EncodeToString([]byte(target))
 }

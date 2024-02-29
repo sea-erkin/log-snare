@@ -28,7 +28,7 @@ func (h *SettingsHandler) Settings(c *gin.Context) {
 		"CurrentRoute":        "/settings",
 		"Users":               users,
 		"UserCompanyId":       user.CompanyId,
-		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+		"ManageUserCompanyId": manageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,
@@ -46,7 +46,7 @@ func (h *SettingsHandler) Docs(c *gin.Context) {
 	c.HTML(200, "docs.html", gin.H{
 		"CurrentRoute":        "/docs",
 		"UserCompanyId":       user.CompanyId,
-		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+		"ManageUserCompanyId": manageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,

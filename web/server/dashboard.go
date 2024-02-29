@@ -47,7 +47,7 @@ func (h *DashboardHandler) Dashboard(c *gin.Context) {
 		"CompletedTwo":        challenges.TwoComplete,
 		"CompletedThree":      challenges.ThreeComplete,
 		"UserCompanyId":       user.CompanyId,
-		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+		"ManageUserCompanyId": manageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,

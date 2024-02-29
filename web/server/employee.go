@@ -75,7 +75,7 @@ func (h *EmployeeHandler) Employees(c *gin.Context) {
 		"EmployeeCompanyName": employeeCompanyName,
 		"EmployeeCount":       len(employees),
 		"UserCompanyId":       user.CompanyId,
-		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+		"ManageUserCompanyId": manageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,

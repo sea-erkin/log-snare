@@ -72,14 +72,14 @@ func (m *User) SetPassword(password string) error {
 	return nil
 }
 
-func CreateUserWithPassword(username string, role int, logPassword bool) User {
+func createUserWithPassword(username string, role int, logPassword bool) User {
 	user := User{
 		Username: username,
 		Role:     role,
 	}
 	password := generatePassword(12)
 	if logPassword {
-		log.Printf("[DATA] %s password: %s\n", username, password)
+		log.Printf("[DATA] Login username: %s password: %s\n", username, password)
 	}
 
 	err := user.SetPassword(password)

@@ -1,2 +1,3 @@
 ignore/
 web/cmd/logsnare.db
+web/cmd/logsnare.log

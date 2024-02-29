@@ -95,7 +95,7 @@ func (h *UserHandler) EnableAdmin(c *gin.Context) {
 
 	if data.ValidationEnabled() {
 		if userSession.Role != service.RoleAdmin {
-			h.UserService.Logger.Warn("user is trying to access a company ID that is not theirs",
+			h.UserService.Logger.Warn("user is trying to enable admin, but they are a basic user",
 				zap.String("username", userSession.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
@@ -138,6 +138,20 @@ func (h *UserHandler) DisableAdmin(c *gin.Context) {
 	session := sessions.Default(c)
 	userSession := session.Get("user").(data.UserSafe)
 
+	if data.ValidationEnabled() {
+		if userSession.Role != service.RoleAdmin {
+			h.UserService.Logger.Warn("user is trying to disable admin, but they are a basic user",
+				zap.String("username", userSession.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+	}
+
 	// set in DB
 	err := h.UserService.DB.Model(&data.User{}).Where("id = ?", userSession.UserId).Update("role", 2).Error
 	if err != nil {
@@ -161,10 +175,19 @@ func (h *UserHandler) DisableAdmin(c *gin.Context) {
 
 func (h *UserHandler) Users(c *gin.Context) {
 
+	session := sessions.Default(c)
+	user := session.Get("user").(data.UserSafe)
+
 	// expecting input as base64 string
 	decodedBytes, err := base64.StdEncoding.DecodeString(c.Param("id"))
 	if err != nil {
-		h.UserService.Logger.Error("unable to parse id, expecting base64", zap.Error(err))
+		h.UserService.Logger.Warn("user has provided invalid base64 when expecting base64",
+			zap.String("username", user.Username),
+			zap.String("eventType", "security"),
+			zap.String("securityType", "tamper-certain"),
+			zap.String("eventCategory", "validation"),
+			zap.String("clientIp", c.ClientIP()),
+		)
 		c.HTML(404, "error-404.html", nil)
 		return
 	}
@@ -172,23 +195,38 @@ func (h *UserHandler) Users(c *gin.Context) {
 	id := strings.TrimPrefix(string(decodedBytes), "CompanyId:")
 	intId, err := strconv.Atoi(id)
 	if err != nil {
-		h.UserService.Logger.Error("unable to parse id", zap.Error(err))
+		h.UserService.Logger.Warn("user has provided an invalid CompanyId when expecting an integer",
+			zap.String("username", user.Username),
+			zap.String("eventType", "security"),
+			zap.String("securityType", "tamper-certain"),
+			zap.String("eventCategory", "validation"),
+			zap.String("clientIp", c.ClientIP()),
+		)
 		c.HTML(404, "error-404.html", nil)
 		return
 	}
 
-	session := sessions.Default(c)
-	user := session.Get("user").(data.UserSafe)
-
 	if data.ValidationEnabled() {
 		if user.Role == service.RoleUser {
-			h.UserService.Logger.Error("user is not an admin", zap.Error(err))
+			h.UserService.Logger.Warn("user is not an admin, but trying to access manage users interface",
+				zap.String("username", user.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
 			c.HTML(404, "error-404.html", nil)
 			return
 		}
 
 		if user.CompanyId != intId {
-			h.UserService.Logger.Error("user company id not bla bla", zap.Error(err))
+			h.UserService.Logger.Warn("user is trying to manage users for a company Id they do not belong too.",
+				zap.String("username", user.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
 			c.HTML(404, "error-404.html", nil)
 			return
 		}
@@ -206,7 +244,7 @@ func (h *UserHandler) Users(c *gin.Context) {
 		"UserCompanyName":     compName,
 		"UserCount":           len(users),
 		"UserCompanyId":       user.CompanyId,
-		"ManageUserCompanyId": ManageUserCompanyIdentifier(user.CompanyId),
+		"ManageUserCompanyId": manageUserCompanyIdentifier(user.CompanyId),
 
 		// common data can be moved to middleware
 		"CompanyName":       user.CompanyName,
@@ -219,28 +257,20 @@ func (h *UserHandler) Users(c *gin.Context) {
 
 func (h *UserHandler) Impersonate(c *gin.Context) {
 
-	identifier, err := ksuid.Parse(c.Param("id"))
-	if err != nil {
-		h.UserService.Logger.Error("unable to parse id, expecting ksuid", zap.Error(err))
-		c.HTML(404, "error-404.html", nil)
-		return
-	}
-
 	session := sessions.Default(c)
 	sessionUser := session.Get("user").(data.UserSafe)
 
-	if data.ValidationEnabled() {
-		if sessionUser.Role == service.RoleUser {
-			h.UserService.Logger.Error("user is not an admin", zap.Error(err))
-			c.HTML(404, "error-404.html", nil)
-			return
-		}
-
-		//if user.CompanyId != intId {
-		//	h.UserService.Logger.Error("user company id not bla bla", zap.Error(err))
-		//	c.HTML(404, "error-404.html", nil)
-		//	return
-		//}
+	identifier, err := ksuid.Parse(c.Param("id"))
+	if err != nil {
+		h.UserService.Logger.Warn("unable to parse KSUID identifier for manage users",
+			zap.String("username", sessionUser.Username),
+			zap.String("eventType", "security"),
+			zap.String("securityType", "tamper-certain"),
+			zap.String("eventCategory", "validation"),
+			zap.String("clientIp", c.ClientIP()),
+		)
+		c.HTML(404, "error-404.html", nil)
+		return
 	}
 
 	// set user
@@ -253,7 +283,33 @@ func (h *UserHandler) Impersonate(c *gin.Context) {
 		return
 	}
 
-	// logic here obviously for checking
+	if data.ValidationEnabled() {
+		if sessionUser.Role == service.RoleUser {
+			h.UserService.Logger.Warn("user is not an admin, but is trying to impersonate users",
+				zap.String("username", sessionUser.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+
+		if sessionUser.CompanyId != targetUser.CompanyId {
+			h.UserService.Logger.Warn("user is trying to impersonate someone outside of their company",
+				zap.String("username", sessionUser.Username),
+				zap.String("eventType", "security"),
+				zap.String("securityType", "tamper-certain"),
+				zap.String("eventCategory", "validation"),
+				zap.String("clientIp", c.ClientIP()),
+			)
+			c.HTML(404, "error-404.html", nil)
+			return
+		}
+	}
+
+	// challenge complete if we made it this far
 	if sessionUser.CompanyId != targetUser.CompanyId && targetUser.Role == service.RoleAdmin {
 		h.SettingService.ChallengeComplete("3")
 		c.JSON(200, gin.H{

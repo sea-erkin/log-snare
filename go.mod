@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.9.1
-	github.com/natefinch/lumberjack v2.0.0+incompatible
+	github.com/segmentio/ksuid v1.0.4
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.9.0
 	gorm.io/driver/sqlite v1.5.5
@@ -13,7 +13,6 @@ require (
 )
 
 require (
-	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
@@ -43,7 +42,5 @@ require (
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
