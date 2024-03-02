@@ -12,13 +12,13 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
     <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
-    <title>500 | LogSnare | IDOR & Logging Playground | Catch Attackers with Web Application Logs</title>
+    <title>418 | LogSnare | IDOR & Logging Playground | Catch Attackers with Web Application Logs</title>
     <!-- CSS files -->
     <link href="/assets/css/tabler.min.css?1684106062" rel="stylesheet"/>
-    <link href="/assets/css/tabler-flags.min.css?1684106062" rel="stylesheet"/>
-    <link href="/assets/css/tabler-payments.min.css?1684106062" rel="stylesheet"/>
-    <link href="/assets/css/tabler-vendors.min.css?1684106062" rel="stylesheet"/>
-    <link href="/assets/css/demo.min.css?1684106062" rel="stylesheet"/>
+    <link href="/assets/tabler-flags.min.css?1684106062" rel="stylesheet"/>
+    <link href="/assets/tabler-payments.min.css?1684106062" rel="stylesheet"/>
+    <link href="/assets/tabler-vendors.min.css?1684106062" rel="stylesheet"/>
+    <link href="/assets/demo.min.css?1684106062" rel="stylesheet"/>
     <style>
       @import url('https://rsms.me/inter/inter.css');
       :root {
@@ -29,14 +29,19 @@
       }
     </style>
   </head>
-  <body  class=" border-top-wide border-primary d-flex flex-column">
-    <div class="page page-center">
-      <div class="container-tight py-4">
+  <body  class="border-top-wide border-primary d-flex flex-column">
+    <div class="">
+      <div class="container-tight">
         <div class="empty">
-          <div class="empty-header">500</div>
-          <p class="empty-title">Oops… You just found an error page</p>
+          <div class="text-center mb-4" style="max-height: 20rem">
+            <img src="/assets/img/logsnare-gopher.png" alt="LogSnare" />
+          </div>
+          <p class="empty-title">You've been caught in the snare!</p>
           <p class="empty-subtitle text-muted">
-            We are sorry but our server encountered an internal error
+            Ideally, this action would be logged an alert would be generated for this user attempting to do something malicious.
+            <br/>
+            <br/>
+            Either way, we've logged the action :)
           </p>
           <div class="empty-action">
             <a href="/app/dashboard" class="btn btn-primary">
@@ -46,11 +51,31 @@
             </a>
           </div>
         </div>
+
+      </div>
+          <div class="container-xl">
+            <div class="card">
+              <div class="card-body">
+                <h4>
+                  Malicious Action
+                </h4>
+                <div>
+                  <pre><code>{{ .ErrorMessage }}</code></pre>
+                </div>
+                <h4>Full Log</h4>
+                <div>
+                  <pre><code>{{ .ErrorLog }}</code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
     <!-- Libs JS -->
     <!-- Tabler Core -->
-    <script src="/assets/js/tabler.min.js?1684106062" defer></script>
-    <script src="/assets/js/demo.min.js?1684106062" defer></script>
+    <script src="./assets/js/tabler.min.js?1684106062" defer></script>
+    <script src="./assets/js/demo.min.js?1684106062" defer></script>
   </body>
 </html>

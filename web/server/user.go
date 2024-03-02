@@ -95,15 +95,20 @@ func (h *UserHandler) EnableAdmin(c *gin.Context) {
 
 	if data.ValidationEnabled() {
 		if userSession.Role != service.RoleAdmin {
-			h.UserService.Logger.Warn("user is trying to enable admin, but they are a basic user",
+			errorMsg := "user is trying to enable admin, but they are a basic user"
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", userSession.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
+
 		}
 	}
 
@@ -140,14 +145,18 @@ func (h *UserHandler) DisableAdmin(c *gin.Context) {
 
 	if data.ValidationEnabled() {
 		if userSession.Role != service.RoleAdmin {
-			h.UserService.Logger.Warn("user is trying to disable admin, but they are a basic user",
+			errorMsg := "user is trying to disable admin, but they are a basic user"
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", userSession.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 	}
@@ -181,53 +190,69 @@ func (h *UserHandler) Users(c *gin.Context) {
 	// expecting input as base64 string
 	decodedBytes, err := base64.StdEncoding.DecodeString(c.Param("id"))
 	if err != nil {
-		h.UserService.Logger.Warn("user has provided invalid base64 when expecting base64",
+		errorMsg := "user has provided invalid base64 when expecting base64"
+		h.UserService.Logger.Warn(errorMsg,
 			zap.String("username", user.Username),
 			zap.String("eventType", "security"),
 			zap.String("securityType", "tamper-certain"),
 			zap.String("eventCategory", "validation"),
 			zap.String("clientIp", c.ClientIP()),
 		)
-		c.HTML(404, "error-404.html", nil)
+		c.HTML(418, "error-snare.html", gin.H{
+			"ErrorMessage": errorMsg,
+			"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+		})
 		return
 	}
 
 	id := strings.TrimPrefix(string(decodedBytes), "CompanyId:")
 	intId, err := strconv.Atoi(id)
 	if err != nil {
-		h.UserService.Logger.Warn("user has provided an invalid CompanyId when expecting an integer",
+		errorMsg := "user has provided an invalid CompanyId when expecting an integer"
+		h.UserService.Logger.Warn(errorMsg,
 			zap.String("username", user.Username),
 			zap.String("eventType", "security"),
 			zap.String("securityType", "tamper-certain"),
 			zap.String("eventCategory", "validation"),
 			zap.String("clientIp", c.ClientIP()),
 		)
-		c.HTML(404, "error-404.html", nil)
+		c.HTML(418, "error-snare.html", gin.H{
+			"ErrorMessage": errorMsg,
+			"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+		})
 		return
 	}
 
 	if data.ValidationEnabled() {
 		if user.Role == service.RoleUser {
-			h.UserService.Logger.Warn("user is not an admin, but trying to access manage users interface",
+			errorMsg := "user is not an admin, but trying to access manage users interface"
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", user.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 
 		if user.CompanyId != intId {
-			h.UserService.Logger.Warn("user is trying to manage users for a company Id they do not belong too.",
+			errorMsg := "user is trying to manage users for a company Id they do not belong too."
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", user.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 	}
@@ -262,14 +287,18 @@ func (h *UserHandler) Impersonate(c *gin.Context) {
 
 	identifier, err := ksuid.Parse(c.Param("id"))
 	if err != nil {
-		h.UserService.Logger.Warn("unable to parse KSUID identifier for manage users",
+		errorMsg := "unable to parse KSUID identifier for manage users"
+		h.UserService.Logger.Warn(errorMsg,
 			zap.String("username", sessionUser.Username),
 			zap.String("eventType", "security"),
 			zap.String("securityType", "tamper-certain"),
 			zap.String("eventCategory", "validation"),
 			zap.String("clientIp", c.ClientIP()),
 		)
-		c.HTML(404, "error-404.html", nil)
+		c.HTML(418, "error-snare.html", gin.H{
+			"ErrorMessage": errorMsg,
+			"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+		})
 		return
 	}
 
@@ -285,26 +314,34 @@ func (h *UserHandler) Impersonate(c *gin.Context) {
 
 	if data.ValidationEnabled() {
 		if sessionUser.Role == service.RoleUser {
-			h.UserService.Logger.Warn("user is not an admin, but is trying to impersonate users",
+			errorMsg := "user is not an admin, but is trying to impersonate users"
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", sessionUser.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 
 		if sessionUser.CompanyId != targetUser.CompanyId {
-			h.UserService.Logger.Warn("user is trying to impersonate someone outside of their company",
+			errorMsg := "user is trying to impersonate someone outside of their company"
+			h.UserService.Logger.Warn(errorMsg,
 				zap.String("username", sessionUser.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 	}

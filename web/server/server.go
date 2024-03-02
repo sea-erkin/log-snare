@@ -9,12 +9,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"io"
 	"log"
 	"log-snare/web/data"
 	"log-snare/web/service"
 	"net/http"
+	"os"
 	"strconv"
+	"sync"
 )
+
+var mutex sync.Mutex // used for locking log file
 
 type Server struct {
 	Debug bool
@@ -145,4 +150,66 @@ func authMiddleware() gin.HandlerFunc {
 func manageUserCompanyIdentifier(companyId int) string {
 	target := "CompanyId:" + strconv.Itoa(companyId)
 	return base64.StdEncoding.EncodeToString([]byte(target))
+}
+
+func readLastApplicationLog() string {
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	f, err := os.Open("logsnare.log")
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	var lines []string
+	var fileSize int64
+	fileSize, err = f.Seek(0, io.SeekEnd)
+	if err != nil {
+		return ""
+	}
+
+	var cursor int64 = 1
+	var line []byte
+	for {
+
+		if len(lines) == 2 {
+			return lines[0]
+		}
+
+		f.Seek(-cursor, io.SeekEnd)
+
+		char := make([]byte, 1)
+		_, err = f.Read(char)
+		if err != nil {
+			if err == io.EOF {
+				// Handle EOF
+				if len(line) > 0 {
+					// Append the last line if file does not end with a newline
+					lines = append([]string{string(line)}, lines...)
+				}
+				break
+			}
+			return ""
+		}
+
+		if char[0] == '\n' {
+			lines = append([]string{string(line)}, lines...)
+			line = nil
+		} else {
+			line = append([]byte{char[0]}, line...)
+		}
+
+		if cursor == fileSize {
+			if len(line) > 0 {
+				lines = append([]string{string(line)}, lines...)
+			}
+			break
+		}
+
+		cursor++
+
+	}
+
+	return ""
 }

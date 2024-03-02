@@ -33,27 +33,36 @@ func (h *EmployeeHandler) Employees(c *gin.Context) {
 	id := c.Param("id")
 	intId, err := strconv.Atoi(id)
 	if err != nil {
-		h.EmployeeService.Logger.Warn("unable to parse provided ID as an integer",
+		errorMsg := "unable to parse provided ID as an integer"
+		h.EmployeeService.Logger.Warn(errorMsg,
 			zap.String("username", user.Username),
 			zap.String("eventType", "security"),
 			zap.String("securityType", "tamper-possible"),
 			zap.String("eventCategory", "validation"),
 			zap.String("clientIp", c.ClientIP()),
 		)
-		c.HTML(404, "error-404.html", nil)
+		c.HTML(418, "error-snare.html", gin.H{
+			"ErrorMessage": errorMsg,
+			"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+		})
 		return
 	}
 
 	if data.ValidationEnabled() {
 		if user.CompanyId != intId {
-			h.EmployeeService.Logger.Warn("user is trying to access a company ID that is not theirs",
+			errorMsg := "user is trying to access a company ID that is not theirs"
+			h.EmployeeService.Logger.Warn(errorMsg,
 				zap.String("username", user.Username),
 				zap.String("eventType", "security"),
 				zap.String("securityType", "tamper-certain"),
 				zap.String("eventCategory", "validation"),
 				zap.String("clientIp", c.ClientIP()),
 			)
-			c.HTML(404, "error-404.html", nil)
+
+			c.HTML(418, "error-snare.html", gin.H{
+				"ErrorMessage": errorMsg,
+				"ErrorLog":     readLastApplicationLog(), // hacky way to get the last to print for snare scenarios
+			})
 			return
 		}
 	}
