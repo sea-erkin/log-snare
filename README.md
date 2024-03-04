@@ -5,7 +5,7 @@
 <h4 align="center">A web application playground for testing IDOR, broken access controls, and logging in Go.</h4>
 
 <div align="center">
-    <img align="center" style="width: 50%; height: auto;" src="https://raw.githubusercontent.com/sea-erkin/log-snare/main/web/ui/assets/img/logsnare-gopher.png" alt="logsnare-gopher">
+    <img align="center" style="width: 100%; height: auto;" src="https://raw.githubusercontent.com/sea-erkin/log-snare/main/web/ui/assets/img/logsnare-screenshot.png" alt="logsnare-gopher">
 </div>
 
 ## Overview 
